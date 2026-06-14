@@ -1,0 +1,10 @@
+# Committed intentionally: DuckDB requires no credentials, so this file
+# contains no secrets. Run dbt with DBT_PROFILES_DIR=. from meridian_dbt/.
+meridian:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: '../data/meridian.duckdb'
+      schema: analytics
+      threads: 4

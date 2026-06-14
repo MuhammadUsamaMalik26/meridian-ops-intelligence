@@ -1,0 +1,8 @@
+faker
+pandas
+numpy
+duckdb
+streamlit
+plotly
+scikit-learn
+dbt-duckdb

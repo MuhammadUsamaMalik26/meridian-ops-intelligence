@@ -1,0 +1,84 @@
+version: 2
+
+models:
+  - name: stg_users
+    description: One row per user, KYC and churn status.
+    columns:
+      - name: user_id
+        description: Unique user identifier.
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_transactions
+    description: One row per transaction, including engineered fraud-risk features.
+    columns:
+      - name: transaction_id
+        description: Unique transaction identifier.
+        tests:
+          - unique
+          - not_null
+      - name: user_id
+        tests:
+          - not_null
+      - name: is_flagged
+        description: 1 if transaction was flagged as suspicious, 0 otherwise.
+        tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+
+  - name: stg_events
+    description: One row per behavioural/lifecycle event.
+    columns:
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_subscriptions
+    description: One row per subscription lifecycle record.
+    columns:
+      - name: subscription_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_agents
+    description: One row per operations agent (fraud_ops, disputes, kyc_review teams).
+    columns:
+      - name: agent_id
+        tests:
+          - unique
+          - not_null
+      - name: team
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['fraud_ops', 'disputes', 'kyc_review']
+
+  - name: stg_disputes
+    description: One row per customer dispute.
+    columns:
+      - name: dispute_id
+        tests:
+          - unique
+          - not_null
+      - name: outcome
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['upheld', 'rejected', 'partial']
+
+  - name: stg_aml_alerts
+    description: One row per AML/fraud alert (rule-based or ML-derived).
+    columns:
+      - name: alert_id
+        tests:
+          - unique
+          - not_null
+      - name: status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['open', 'closed', 'escalated', 'SAR_filed']

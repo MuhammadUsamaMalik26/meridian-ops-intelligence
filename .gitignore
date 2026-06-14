@@ -1,0 +1,23 @@
+# Data (generated)
+data/raw/*.csv
+data/*.duckdb
+data/*.duckdb.wal
+
+# dbt
+meridian_dbt/target/
+meridian_dbt/logs/
+meridian_dbt/dbt_packages/
+meridian_dbt/.user.yml
+
+# ML artefacts (generated)
+ml/output/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# OS / editor
+.DS_Store
+.vscode/
