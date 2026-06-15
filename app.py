@@ -52,12 +52,24 @@ def ensure_database():
     con_check.close()
 
     if not analytics_ready:
-        run_step(
-            [sys.executable, "-m", "dbt", "run"],
-            cwd="meridian_dbt",
-            env={**os.environ, "DBT_PROFILES_DIR": "."},
-            spinner_text="Building analytics layer (dbt)..."
-        )
+        with st.spinner("Building analytics layer (dbt)..."):
+            from dbt.cli.main import dbtRunner
+            old_cwd = os.getcwd()
+            old_profiles_dir = os.environ.get("DBT_PROFILES_DIR")
+            try:
+                os.chdir("meridian_dbt")
+                os.environ["DBT_PROFILES_DIR"] = "."
+                result = dbtRunner().invoke(["run"])
+                if not result.success:
+                    st.error("dbt run failed:")
+                    st.code(str(result.exception) if result.exception else "Unknown dbt error")
+                    st.stop()
+            finally:
+                os.chdir(old_cwd)
+                if old_profiles_dir is None:
+                    os.environ.pop("DBT_PROFILES_DIR", None)
+                else:
+                    os.environ["DBT_PROFILES_DIR"] = old_profiles_dir
 
     # Train fraud model if not present
     if not Path("ml/output/fraud_model_metrics.json").exists():
