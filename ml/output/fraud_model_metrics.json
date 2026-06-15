@@ -1,0 +1,78 @@
+{
+  "champion_model": "random_forest",
+  "champion_auc": 0.8851,
+  "challenger_model": "logistic_regression",
+  "challenger_auc": 0.8629,
+  "train_rows": 378936,
+  "test_rows": 126312,
+  "positive_rate": 0.0437,
+  "classification_report": {
+    "0": {
+      "precision": 0.989192288092407,
+      "recall": 0.7713271024942673,
+      "f1-score": 0.8667792305652847,
+      "support": 120797.0
+    },
+    "1": {
+      "precision": 0.14000622665006227,
+      "recall": 0.815412511332729,
+      "f1-score": 0.23897967317656438,
+      "support": 5515.0
+    },
+    "accuracy": 0.7732519475584267,
+    "macro avg": {
+      "precision": 0.5645992573712346,
+      "recall": 0.7933698069134981,
+      "f1-score": 0.5528794518709246,
+      "support": 126312.0
+    },
+    "weighted avg": {
+      "precision": 0.9521153585144213,
+      "recall": 0.7732519475584267,
+      "f1-score": 0.8393684179821668,
+      "support": 126312.0
+    }
+  },
+  "top_features": [
+    {
+      "feature": "amount_to_baseline_ratio",
+      "importance": 0.37903921379194844
+    },
+    {
+      "feature": "amount_gbp",
+      "importance": 0.2581589061131885
+    },
+    {
+      "feature": "is_high_risk_merchant",
+      "importance": 0.12706184800247128
+    },
+    {
+      "feature": "is_late_night",
+      "importance": 0.07121343213708607
+    },
+    {
+      "feature": "merchant_category_crypto_exchange",
+      "importance": 0.04301437076220721
+    },
+    {
+      "feature": "merchant_category_money_service_business",
+      "importance": 0.029930393673116052
+    },
+    {
+      "feature": "user_baseline_amount",
+      "importance": 0.027716635250574818
+    },
+    {
+      "feature": "merchant_category_gambling",
+      "importance": 0.024425550017515642
+    },
+    {
+      "feature": "is_high_risk_geography",
+      "importance": 0.007129409342426206
+    },
+    {
+      "feature": "geography_UK",
+      "importance": 0.004407307961194088
+    }
+  ]
+}

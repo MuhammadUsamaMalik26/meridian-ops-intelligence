@@ -1,16 +1,17 @@
-# Data (generated)
+# Raw CSVs are regenerable but large; not committed
 data/raw/*.csv
-data/*.duckdb
 data/*.duckdb.wal
+
+# Pre-built warehouse and model ARE committed (see README) so the
+# deployed Streamlit app doesn't need to run dbt/generate data at runtime.
+# data/meridian.duckdb   <- intentionally NOT ignored
+# ml/output/             <- intentionally NOT ignored
 
 # dbt
 meridian_dbt/target/
 meridian_dbt/logs/
 meridian_dbt/dbt_packages/
 meridian_dbt/.user.yml
-
-# ML artefacts (generated)
-ml/output/
 
 # Python
 __pycache__/

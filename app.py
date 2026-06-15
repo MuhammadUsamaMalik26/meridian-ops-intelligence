@@ -17,63 +17,29 @@ import os
 import json
 import pickle
 
-# ─── Auto-build database if not present (handles Streamlit Cloud cold start) ──
-def run_step(cmd, cwd=None, env=None, spinner_text="Working..."):
-    """Run a subprocess step, surfacing stdout/stderr in the app on failure."""
-    with st.spinner(spinner_text):
-        result = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True)
-        if result.returncode != 0:
-            st.error(f"Step failed: {' '.join(cmd)}")
-            st.code(result.stdout[-3000:] + "\n" + result.stderr[-3000:])
-            st.stop()
-
+# ─── Verify pre-built artifacts are present ───────────────────────────────────
+# Database and model are pre-built and committed to the repo (see README) —
+# this avoids running dbt/data-generation on Streamlit Cloud, which hit a
+# Python 3.14 / dbt-duckdb dependency incompatibility (mashumaro).
 def ensure_database():
     db_path = Path("data/meridian.duckdb")
-    raw_path = Path("data/raw/dim_users.csv")
+    metrics_path = Path("ml/output/fraud_model_metrics.json")
 
-    if not raw_path.exists():
-        os.makedirs("data/raw", exist_ok=True)
-        run_step(
-            [sys.executable, "generate_data.py"],
-            spinner_text="Setting up Meridian data — first run only, this takes about 2 minutes "
-                          "(generating data, building the analytics layer, training the fraud model)..."
-        )
-
+    missing = []
     if not db_path.exists():
-        run_step([sys.executable, "load_db.py"], spinner_text="Loading raw data into warehouse...")
+        missing.append(str(db_path))
+    if not metrics_path.exists():
+        missing.append(str(metrics_path))
 
-    # Check if analytics schema has been built by dbt
-    con_check = duckdb.connect(str(db_path), read_only=True)
-    try:
-        con_check.execute("SELECT 1 FROM analytics.mart_transaction_monitoring LIMIT 1")
-        analytics_ready = True
-    except Exception:
-        analytics_ready = False
-    con_check.close()
-
-    if not analytics_ready:
-        with st.spinner("Building analytics layer (dbt)..."):
-            from dbt.cli.main import dbtRunner
-            old_cwd = os.getcwd()
-            old_profiles_dir = os.environ.get("DBT_PROFILES_DIR")
-            try:
-                os.chdir("meridian_dbt")
-                os.environ["DBT_PROFILES_DIR"] = "."
-                result = dbtRunner().invoke(["run"])
-                if not result.success:
-                    st.error("dbt run failed:")
-                    st.code(str(result.exception) if result.exception else "Unknown dbt error")
-                    st.stop()
-            finally:
-                os.chdir(old_cwd)
-                if old_profiles_dir is None:
-                    os.environ.pop("DBT_PROFILES_DIR", None)
-                else:
-                    os.environ["DBT_PROFILES_DIR"] = old_profiles_dir
-
-    # Train fraud model if not present
-    if not Path("ml/output/fraud_model_metrics.json").exists():
-        run_step([sys.executable, "ml/fraud_model.py"], spinner_text="Training fraud detection model — first run only...")
+    if missing:
+        st.error(
+            "Pre-built data files are missing: " + ", ".join(missing) + ". "
+            "Run `python generate_data.py && python load_db.py && "
+            "(cd meridian_dbt && DBT_PROFILES_DIR=. dbt run) && "
+            "python ml/fraud_model.py` locally, then commit the generated "
+            "data/meridian.duckdb and ml/output/ files to the repo."
+        )
+        st.stop()
 
 ensure_database()
 
