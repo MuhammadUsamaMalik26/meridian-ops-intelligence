@@ -12,25 +12,35 @@ import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
 import subprocess
+import sys
 import os
 import json
 import pickle
 
 # ─── Auto-build database if not present (handles Streamlit Cloud cold start) ──
+def run_step(cmd, cwd=None, env=None, spinner_text="Working..."):
+    """Run a subprocess step, surfacing stdout/stderr in the app on failure."""
+    with st.spinner(spinner_text):
+        result = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True)
+        if result.returncode != 0:
+            st.error(f"Step failed: {' '.join(cmd)}")
+            st.code(result.stdout[-3000:] + "\n" + result.stderr[-3000:])
+            st.stop()
+
 def ensure_database():
     db_path = Path("data/meridian.duckdb")
     raw_path = Path("data/raw/dim_users.csv")
-    dbt_target = Path("meridian_dbt/target")
 
     if not raw_path.exists():
-        with st.spinner("Setting up Meridian data — first run only, this takes about 2 minutes "
-                         "(generating data, building the analytics layer, training the fraud model)..."):
-            os.makedirs("data/raw", exist_ok=True)
-            subprocess.run(["python", "generate_data.py"], check=True)
+        os.makedirs("data/raw", exist_ok=True)
+        run_step(
+            [sys.executable, "generate_data.py"],
+            spinner_text="Setting up Meridian data — first run only, this takes about 2 minutes "
+                          "(generating data, building the analytics layer, training the fraud model)..."
+        )
 
     if not db_path.exists():
-        with st.spinner("Loading raw data into warehouse..."):
-            subprocess.run(["python", "load_db.py"], check=True)
+        run_step([sys.executable, "load_db.py"], spinner_text="Loading raw data into warehouse...")
 
     # Check if analytics schema has been built by dbt
     con_check = duckdb.connect(str(db_path), read_only=True)
@@ -42,18 +52,16 @@ def ensure_database():
     con_check.close()
 
     if not analytics_ready:
-        with st.spinner("Building analytics layer (dbt)..."):
-            subprocess.run(
-                ["dbt", "run"],
-                cwd="meridian_dbt",
-                env={**os.environ, "DBT_PROFILES_DIR": "."},
-                check=True
-            )
+        run_step(
+            [sys.executable, "-m", "dbt", "run"],
+            cwd="meridian_dbt",
+            env={**os.environ, "DBT_PROFILES_DIR": "."},
+            spinner_text="Building analytics layer (dbt)..."
+        )
 
     # Train fraud model if not present
     if not Path("ml/output/fraud_model_metrics.json").exists():
-        with st.spinner("Training fraud detection model — first run only..."):
-            subprocess.run(["python", "ml/fraud_model.py"], check=True)
+        run_step([sys.executable, "ml/fraud_model.py"], spinner_text="Training fraud detection model — first run only...")
 
 ensure_database()
 
