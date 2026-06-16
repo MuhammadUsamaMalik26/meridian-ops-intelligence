@@ -121,22 +121,47 @@ with st.sidebar:
     st.markdown("**Ops Intelligence Platform**")
     st.markdown("---")
 
-    page = st.radio(
+    OPS_PAGES = ["Ops Overview", "Transaction Monitoring", "Disputes",
+                 "Capacity Planning", "Case Note Generator"]
+    LEGACY_PAGES = ["Acquisition Funnel", "Cohort Retention",
+                     "Customer Segments", "Revenue (MRR)"]
+
+    if "active_page" not in st.session_state:
+        st.session_state.active_page = OPS_PAGES[0]
+
+    def _on_ops_change():
+        st.session_state.active_page = st.session_state.ops_nav
+
+    def _on_legacy_change():
+        st.session_state.active_page = st.session_state.legacy_nav
+
+    ops_default = st.session_state.active_page if st.session_state.active_page in OPS_PAGES else OPS_PAGES[0]
+    st.radio(
         "Navigate",
-        [
-            "Ops Overview",
-            "Transaction Monitoring",
-            "Disputes",
-            "Capacity Planning",
-            "Case Note Generator",
-            "── Legacy / Growth ──",
-            "Acquisition Funnel",
-            "Cohort Retention",
-            "Customer Segments",
-            "Revenue (MRR)",
-        ],
-        label_visibility="collapsed"
+        OPS_PAGES,
+        index=OPS_PAGES.index(ops_default),
+        label_visibility="collapsed",
+        key="ops_nav",
+        on_change=_on_ops_change
     )
+
+    st.markdown(
+        "<div style='font-size:11px; color:#4a5568; text-transform:uppercase; "
+        "letter-spacing:0.1em; margin:16px 0 8px 0;'>Legacy / Growth</div>",
+        unsafe_allow_html=True
+    )
+
+    legacy_default = st.session_state.active_page if st.session_state.active_page in LEGACY_PAGES else LEGACY_PAGES[0]
+    st.radio(
+        "Legacy navigate",
+        LEGACY_PAGES,
+        index=LEGACY_PAGES.index(legacy_default),
+        label_visibility="collapsed",
+        key="legacy_nav",
+        on_change=_on_legacy_change
+    )
+
+    page = st.session_state.active_page
 
     st.markdown("---")
     st.markdown("""
@@ -630,9 +655,10 @@ elif page == "Cohort Retention":
         showscale=True,
         colorbar=dict(tickfont=dict(color="#94a3b8"))
     ))
-    fig.update_layout(**PLOTLY_LAYOUT, title="Cohort Retention Heatmap", height=480,
-                      xaxis=dict(side="top", gridcolor=BORDER),
-                      yaxis=dict(autorange="reversed", gridcolor=BORDER))
+    cohort_layout = {**PLOTLY_LAYOUT, "title": "Cohort Retention Heatmap", "height": 480}
+    cohort_layout["xaxis"] = {**PLOTLY_LAYOUT["xaxis"], "side": "top"}
+    cohort_layout["yaxis"] = {**PLOTLY_LAYOUT["yaxis"], "autorange": "reversed"}
+    fig.update_layout(**cohort_layout)
     st.plotly_chart(fig, use_container_width=True)
 
     st.markdown('<div class="section-header">Month 1 Retention Trend</div>', unsafe_allow_html=True)
@@ -757,17 +783,4 @@ elif page == "Revenue (MRR)":
         }).sort_values("Month", ascending=False),
         use_container_width=True, hide_index=True
     )
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Divider page placeholder (sidebar separator)
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "── Legacy / Growth ──":
-    st.markdown("# Legacy / Growth Analytics")
-    st.markdown("""
-    These pages are carried over from the platform's original growth-analytics scope
-    (acquisition, retention, segmentation, MRR). They remain functional and use the same
-    underlying user/transaction data, but are secondary to the Ops Intelligence modules
-    above. Select a page from the sidebar to view.
-    """)
 
